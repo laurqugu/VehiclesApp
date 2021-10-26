@@ -1,4 +1,4 @@
-# vehicles_app
+# Vehicles Flutter App
 
 A new Flutter project.
 
