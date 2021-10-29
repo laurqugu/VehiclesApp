@@ -3,8 +3,10 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:email_validator/email_validator.dart';
 import 'package:http/http.dart' as http;
+import 'package:vehicles_app/components/loader_component.dart';
 
 import 'package:vehicles_app/helpers/constans.dart';
+import 'package:vehicles_app/models/token.dart';
 
 
 class LoginScreen extends StatefulWidget {
@@ -26,21 +28,30 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _rememberme = true;
   bool _passwordShow = false;
 
+  bool _showLoader = false;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            _showLogo(),
-            SizedBox(height: 9,),
-            _showEmail(),
-            _showPassword(),
-            _showRememberMe(),
-            _showButtons(),
-          ],
-        )
+       body: Stack(
+        children: <Widget>[
+          SingleChildScrollView(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                SizedBox(height: 40,),
+                _showLogo(),
+                SizedBox(height: 20,),
+                _showEmail(),
+                _showPassword(),
+                _showRememberme(),
+                //_showForgotPassword(),
+                _showButtons(),
+              ],
+            ),
+          ),
+          _showLoader ? LoaderComponent(text: 'Por favor espere...') : Container(),
+        ],
       ),
     );
   }
@@ -104,7 +115,7 @@ class _LoginScreenState extends State<LoginScreen> {
    );
  }
 
- Widget _showRememberMe() {
+ Widget _showRememberme() {
    return CheckboxListTile(
      title: Text('Recordarme'),
      value: _rememberme, 
@@ -163,6 +174,10 @@ class _LoginScreenState extends State<LoginScreen> {
      return;     
    }
 
+   setState(() {
+     _showLoader = true;
+   });
+
    Map<String, dynamic> request = {
      'userName': _email,
      'password': _password,
@@ -178,23 +193,35 @@ class _LoginScreenState extends State<LoginScreen> {
      body: jsonEncode(request)
    );
 
-   print(response.body);
+   setState(() {
+     _showLoader = false;
+   });
+
+   if(response.statusCode >= 400){
+     setState(() {
+       _passwordShowError = true;
+       _passwordError = 'Correo y/o contraseña incorrectos.';
+     });
+   }
+
+   var body = response.body;
+   var decodedJson = jsonDecode(body);
+   var token = Token.fromJson(decodedJson);
 
  }
 
   bool _validateFields() {
-    bool isValid = true;
+     bool isValid = true;
 
     if (_email.isEmpty) {
       isValid = false;
       _emailShowError = true;
-      _emailError = 'Debes ingresar tu correo electrónico';
-    }else if(!EmailValidator.validate(_email)){
+      _emailError = 'Debes ingresar tu email.';
+    } else if (!EmailValidator.validate(_email)) {
       isValid = false;
       _emailShowError = true;
-      _emailError = 'Debes ingresar tu correo electrónico válido.';
-    }
-    else{
+      _emailError = 'Debes ingresar un email válido.';
+    } else {
       _emailShowError = false;
     }
 
@@ -202,17 +229,15 @@ class _LoginScreenState extends State<LoginScreen> {
       isValid = false;
       _passwordShowError = true;
       _passwordError = 'Debes ingresar tu contraseña.';
-    }else if(_password.length < 6){
+    } else if (_password.length < 6) {
       isValid = false;
       _passwordShowError = true;
-      _passwordError = 'Debe ingresar una contraseña de al menos 6 caracteres.';
-    }
-    else{
+      _passwordError = 'Debes ingresar una contraseña de al menos 6 carácteres.';
+    } else {
       _passwordShowError = false;
     }
 
     setState(() { });
-
     return isValid;
   }
 }

@@ -20,7 +20,7 @@ class Token {
     phoneNumber: ''
   );
 
-  Token({ required this.token, required this.expiration, required this.user});
+  Token({required this.token, required this.expiration, required this.user});
 
   Token.fromJson(Map<String, dynamic> json) {
     token = json['token'];
